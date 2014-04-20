@@ -11,7 +11,8 @@ def make_app():
 
     @app.route('/<id>')
     def show_email(id):
-        return jsonify(inbox[-int(id)])
+        email = inbox[-int(id)]
+        return jsonify({'headers': email.headers, 'body': email.body})
 
     return app
 

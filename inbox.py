@@ -2,6 +2,20 @@ import email
 import imaplib
 
 
+class Email(object):
+    def __init__(self, string):
+        self._m = email.message_from_string(string)
+
+    @property
+    def headers(self):
+        return dict(self._m.items())
+
+    @property
+    def body(self):
+        return [part.get_payload() for part in self._m.walk()
+                if part.get_content_type() == 'text/plain']
+
+
 class Inbox(object):
     def __init__(self, imap4_client):
         self._mail = imap4_client
@@ -17,12 +31,7 @@ class Inbox(object):
         # fetch the email body (RFC822) for the given ID
         _, data = self._mail.fetch(ids[index], "(RFC822)")
         # NOTE: second value seems irrelevant?, i.e. ')'
-        most_recent_email = data[0][1]
-        m = email.message_from_string(most_recent_email)
-        e = dict(m.items())
-        e['body'] = [part.get_payload() for part in m.walk()
-                     if part.get_content_type() == 'text/plain']
-        return e
+        return Email(data[0][1])
 
 
 def make_inbox(username, password):
