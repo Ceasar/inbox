@@ -3,17 +3,25 @@ import imaplib
 
 
 class Email(object):
-    def __init__(self, string):
-        self._m = email.message_from_string(string)
+    """
+    :param message: an email.message.Message object
+    """
+    def __init__(self, message):
+        self._message = message
 
     @property
     def headers(self):
-        return dict(self._m.items())
+        return dict(self._message.items())
 
     @property
     def body(self):
-        return [part.get_payload() for part in self._m.walk()
-                if part.get_content_type() == 'text/plain']
+        for part in self._message.walk():
+            print dir(part)
+        return [
+            {'payload': str(part.get_payload()),
+             'Content-Type': part.get_content_type()}
+            for part in self._message.walk()
+            if not part.is_multipart()]
 
 
 class Inbox(object):
@@ -31,7 +39,8 @@ class Inbox(object):
         # fetch the email body (RFC822) for the given ID
         _, data = self._mail.fetch(ids[index], "(RFC822)")
         # NOTE: second value seems irrelevant?, i.e. ')'
-        return Email(data[0][1])
+        message = email.message_from_string(data[0][1])
+        return Email(message)
 
 
 def make_inbox(username, password):
