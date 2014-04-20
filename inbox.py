@@ -2,7 +2,7 @@ import email
 import imaplib
 
 
-class Email(object):
+class Message(object):
     """
     :param message: an email.message.Message object
     """
@@ -40,7 +40,7 @@ class Inbox(object):
         _, data = self._mail.fetch(ids[index], "(RFC822)")
         # NOTE: second value seems irrelevant?, i.e. ')'
         message = email.message_from_string(data[0][1])
-        return Email(message)
+        return Message(message)
 
 
 def make_inbox(username, password):
