@@ -12,3 +12,7 @@ Create a file called ``local_settings.py`` and define ``USERNAME`` and
 
     USERNAME = "alice@a.org"
     PASSWORD = "mypassword"
+
+Then, run the server via::
+
+    make
