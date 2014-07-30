@@ -24,7 +24,7 @@ def make_app(username, password):
         except AuthenticationError:
             abort(401)
 
-    @app.route('/<mailbox_name>')
+    @app.route('/<path:mailbox_name>')
     def show_mailbox(mailbox_name):
         try:
             mailbox = server.connect().select(mailbox_name)
@@ -34,7 +34,7 @@ def make_app(username, password):
             abort(404)
         return jsonify({"message_ids": mailbox.list_messages()})
 
-    @app.route('/<mailbox_name>/<id>')
+    @app.route('/<path:mailbox_name>/<int:id>')
     def show_message(mailbox_name, id):
         try:
             inbox = server.connect().select(mailbox_name)
