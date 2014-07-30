@@ -5,3 +5,7 @@ server: | env
 
 env: 
 	virtualenv env
+
+
+test:
+	. env/bin/activate && py.test test_imaplib2.py
