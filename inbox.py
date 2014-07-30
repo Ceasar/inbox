@@ -1,10 +1,13 @@
 """
 Convenience wrapper over imaplib.
 
+http://tools.ietf.org/html/rfc3501
+
 http://hg.python.org/cpython/file/2.7/Lib/imaplib.py
 """
 import email
 import imaplib
+import re
 
 
 class AuthenticationError(Exception):
@@ -32,24 +35,51 @@ class Message(object):
             if not part.is_multipart()]
 
 
+list_re = re.compile(r'\((.*)\) \"(.*)\" \"(.*)\"')
+
+
+class ListResponse(object):
+    def __init__(self, list_response):
+        match = list_re.match(list_response)
+        self.attributes = match.group(1).split()
+        self.hierarchy_delimiter = match.group(2)
+        self.name = match.group(3)
+
+
 class Connection(object):
     """A connection to an IMAP server."""
-    def __init__(self, connection):
-        self.connection = connection
+    def __init__(self, host_name, username, password):
+        self.connection = imaplib.IMAP4_SSL(host_name)
+        self._login(username, password)
 
-    def get_mailbox(self, name):
-        """Select a mailbox."""
+    def _login(self, username, password):
+        """Establish authentication and enter the authenticated state."""
+        try:
+            self.connection.login(username, password)
+        except imaplib.IMAP4_SSL.error as e:
+            raise AuthenticationError(e)
+
+    def select(self, mailbox_name):
+        """Select a mailbox so that messages in the mailbox can be accessed."""
         # Not performing select gets: "SEARCH illegal in state AUTH, only
         # allowed in states SELECTED"
-        status, message = self.connection.select(str(name))
-        if status != "OK":
+        status, message = self.connection.select(str(mailbox_name))
+        if status != Response.OK:
             raise ValueError(message)
-        return Mailbox(self, name)
+        return Mailbox(self, mailbox_name)
 
-    def list_mailboxes(self):
-        """List all the mailboxes."""
-        _, data = self.connection.list()
-        return data
+    def list(self, directory="", pattern="*"):
+        """Get a list of zero or more untagged ListResponses."""
+        _, list_responses = self.connection.list(directory, pattern)
+        return [ListResponse(list_response)
+                for list_response in list_responses]
+
+
+class Response(object):
+    # There are three possible server completion responses
+    OK = "OK"  # indicates success
+    NO = "NO"  # indicates failure
+    BAD = "BAD"  # indicates a protocol error
 
 
 class Server(object):
@@ -62,16 +92,14 @@ class Server(object):
         self.password = password
 
     def connect(self):
-        """Get a connection to an IMAP server."""
-        conn = imaplib.IMAP4_SSL(self.host_name)
-        try:
-            conn.login(self.username, self.password)
-        except imaplib.IMAP4_SSL.error as e:
-            raise AuthenticationError(e)
-        return Connection(conn)
+        """Get an authenticated connection to an IMAP server."""
+        return Connection(self.host_name, self.username, self.password)
 
 
 class Mailbox(object):
+    """
+    A Mailbox represents a remote folder of messages.
+    """
     def __init__(self, connection, name):
         self.connection = connection
         self.name = name

@@ -1,4 +1,4 @@
-from flask import Flask, abort, jsonify
+from flask import Flask, abort, jsonify, url_for
 
 from inbox import AuthenticationError, Server
 from local_settings import USERNAME, PASSWORD
@@ -14,14 +14,20 @@ def make_app(username, password):
     @app.route('/')
     def index():
         try:
-            return jsonify({"mailboxes": server.connect().list_mailboxes()})
+            mailboxes = server.connect().list()
+            resp = {"mailboxes": [
+                url_for('show_mailbox', mailbox_name=mailbox.name,
+                        _external=True)
+                for mailbox in mailboxes
+            ]}
+            return jsonify(resp)
         except AuthenticationError:
             abort(401)
 
     @app.route('/<mailbox_name>')
     def show_mailbox(mailbox_name):
         try:
-            mailbox = server.connect().get_mailbox(mailbox_name)
+            mailbox = server.connect().select(mailbox_name)
         except AuthenticationError:
             abort(401)
         except ValueError:
@@ -31,7 +37,7 @@ def make_app(username, password):
     @app.route('/<mailbox_name>/<id>')
     def show_message(mailbox_name, id):
         try:
-            inbox = server.connect().get_mailbox(mailbox_name)
+            inbox = server.connect().select(mailbox_name)
         except AuthenticationError:
             abort(401)
         email = inbox[-int(id)]
