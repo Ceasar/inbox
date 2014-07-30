@@ -32,7 +32,13 @@ def make_app(username, password):
             abort(401)
         except ValueError:
             abort(404)
-        return jsonify({"message_ids": mailbox.list_messages()})
+        message_ids = mailbox.list_messages()
+        resp = {
+            "name": mailbox_name,
+            "messages": [url_for('show_message', mailbox_name=mailbox_name,
+                                 id=id, _external=True) for id in message_ids],
+        }
+        return jsonify(resp)
 
     @app.route('/<path:mailbox_name>/<int:id>')
     def show_message(mailbox_name, id):
