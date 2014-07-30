@@ -7,6 +7,10 @@ import email
 import imaplib
 
 
+class AuthenticationError(Exception):
+    pass
+
+
 class Message(object):
     """
     :param s: a string
@@ -37,7 +41,7 @@ class Connection(object):
         """Select a mailbox."""
         # Not performing select gets: "SEARCH illegal in state AUTH, only
         # allowed in states SELECTED"
-        status, message = self.connection.select(name)
+        status, message = self.connection.select(str(name))
         if status != "OK":
             raise ValueError(message)
         return Mailbox(self, name)
@@ -60,7 +64,10 @@ class Server(object):
     def connect(self):
         """Get a connection to an IMAP server."""
         conn = imaplib.IMAP4_SSL(self.host_name)
-        conn.login(self.username, self.password)
+        try:
+            conn.login(self.username, self.password)
+        except imaplib.IMAP4_SSL.error as e:
+            raise AuthenticationError(e)
         return Connection(conn)
 
 
@@ -86,7 +93,3 @@ class Mailbox(object):
     def __getitem__(self, index):
         ids = self.list_messages()
         return self.get_message(ids[index])
-
-
-def make_inbox(username, password):
-    return Server('imap.gmail.com', username, password)
