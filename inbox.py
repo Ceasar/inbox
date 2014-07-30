@@ -28,6 +28,26 @@ class Message(object):
             if not part.is_multipart()]
 
 
+class Connection(object):
+    """A connection to an IMAP server."""
+    def __init__(self, connection):
+        self.connection = connection
+
+    def get_mailbox(self, name):
+        """Select a mailbox."""
+        # Not performing select gets: "SEARCH illegal in state AUTH, only
+        # allowed in states SELECTED"
+        status, message = self.connection.select(name)
+        if status != "OK":
+            raise ValueError(message)
+        return Mailbox(self, name)
+
+    def list_mailboxes(self):
+        """List all the mailboxes."""
+        _, data = self.connection.list()
+        return data
+
+
 class Server(object):
     """
     Represents a server that supports IMAP connections.
@@ -37,42 +57,35 @@ class Server(object):
         self.username = username
         self.password = password
 
-    def connection(self):
-        connection = imaplib.IMAP4_SSL(self.host_name)
-        connection.login(self.username, self.password)
-        return connection
-
-    @property
-    def mailboxes(self):
-        _, data = self.connection().list()
-        return [x for x in data]
-
-    def get_mailbox(self, inbox_name):
-        return Mailbox(self.connection(), inbox_name)
+    def connect(self):
+        """Get a connection to an IMAP server."""
+        conn = imaplib.IMAP4_SSL(self.host_name)
+        conn.login(self.username, self.password)
+        return Connection(conn)
 
 
 class Mailbox(object):
     def __init__(self, connection, name):
         self.connection = connection
         self.name = name
-        # Not performing select gets: "SEARCH illegal in state AUTH, only
-        # allowed in states SELECTED"
-        status, message = self.connection.select(name)
-        if status != "OK":
-            raise ValueError(message)
 
-    def get_message_ids(self):
+    def get_message(self, message_id):
+        """Fetch an email message."""
+        # fetch the email body (RFC822) for the given ID
+        message_set, message_parts = message_id, "(RFC822)"
+        _, data = self.connection.connection.fetch(message_set, message_parts)
+        # data is a list of tuples of message part envelope and data.
+        return Message(data[0][1])
+
+    def list_messages(self):
+        """Get a list of message IDs that fit the search criteria"""
         charset, criteria = None, ["ALL"]
-        _, data = self.connection.search(charset, *criteria)
+        _, data = self.connection.connection.search(charset, *criteria)
         return data[0].split()
 
     def __getitem__(self, index):
-        ids = self.get_message_ids()
-        # fetch the email body (RFC822) for the given ID
-        message_set, message_parts = ids[index], "(RFC822)"
-        _, data = self.connection.fetch(message_set, message_parts)
-        # data is a list of tuples of message part envelope and data.
-        return Message(data[0][1])
+        ids = self.list_messages()
+        return self.get_message(ids[index])
 
 
 def make_inbox(username, password):

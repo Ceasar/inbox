@@ -13,19 +13,19 @@ def make_app(username, password):
 
     @app.route('/')
     def index():
-        return jsonify({"mailboxes": server.mailboxes})
+        return jsonify({"mailboxes": server.connect().list_mailboxes()})
 
     @app.route('/<mailbox_name>')
     def show_mailbox(mailbox_name):
         try:
-            mailbox = server.get_mailbox(mailbox_name)
+            mailbox = server.connect().get_mailbox(mailbox_name)
         except ValueError:
             abort(404)
-        return jsonify({"message_ids": mailbox.get_message_ids()})
+        return jsonify({"message_ids": mailbox.list_messages()})
 
     @app.route('/<mailbox_name>/<id>')
     def show_message(mailbox_name, id):
-        inbox = server.get_mailbox(mailbox_name)
+        inbox = server.connect().get_mailbox(mailbox_name)
         email = inbox[-int(id)]
         return jsonify({'headers': email.headers, 'body': email.body})
 
