@@ -1,21 +1,36 @@
-from flask import Flask, jsonify
+from flask import Flask, abort, jsonify
 
 from inbox import make_inbox
-
 from local_settings import USERNAME, PASSWORD
 
 
-def make_app(inbox):
+def make_app(username, password):
     app = Flask(__name__)
 
-    @app.route('/<id>')
-    def show_email(id):
+    app.logger.debug("connecting to inbox...")
+    server = make_inbox(username, password)
+    app.logger.debug("connected.")
+
+    @app.route('/')
+    def index():
+        return jsonify({"mailboxes": server.mailboxes})
+
+    @app.route('/<mailbox_name>')
+    def show_mailbox(mailbox_name):
+        try:
+            mailbox = server.get_mailbox(mailbox_name)
+        except ValueError:
+            abort(404)
+        return jsonify({"message_ids": mailbox.get_message_ids()})
+
+    @app.route('/<mailbox_name>/<id>')
+    def show_message(mailbox_name, id):
+        inbox = server.get_mailbox(mailbox_name)
         email = inbox[-int(id)]
         return jsonify({'headers': email.headers, 'body': email.body})
 
     return app
 
 if __name__ == "__main__":
-    inbox = make_inbox(USERNAME, PASSWORD)
-    app = make_app(inbox)
-    app.run(debug=True)
+    app = make_app(USERNAME, PASSWORD)
+    app.run(debug=True, port=8000)
