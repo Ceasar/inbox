@@ -1,6 +1,6 @@
 from flask import Flask, abort, jsonify, url_for
 
-from inbox import AuthenticationError, Server
+from imaplib2 import AuthenticationError, Server
 from local_settings import USERNAME, PASSWORD
 
 
