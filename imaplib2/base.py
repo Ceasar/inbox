@@ -41,18 +41,22 @@ class Connection(object):
         return self.__connection.close()
 
     # TODO: Determine what this is fetching
-    def fetch(self, uid, message_parts="(RFC822)"):
+    def fetch(self, uid, message_parts=("RFC822",)):
         """Retrieve data associated with a message in the mailbox.
 
         :param uid:
             The unique identifier for the message.
 
         :param message_parts:
-            Optional. pass. Defaults to '(RFC822)', which retrieves the
-            entire message, including the header. This is compatible with the
+            Optional. pass. Defaults to ``('RFC822',)``, which retrieves the
+            entire message, including the header and is compatible with the
             ``email`` library.
         """
-        _, data = self.__connection.uid('fetch', uid, message_parts)
+        _, data = self.__connection.uid(
+            'fetch',
+            uid,
+            "(%s)" % " ".join(message_parts)
+        )
         return data
 
     def list(self, directory="", pattern="*"):
