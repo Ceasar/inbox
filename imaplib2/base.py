@@ -1,3 +1,6 @@
+"""
+This module defines the basic components used to interface with an IMAP server.
+"""
 import email
 import imaplib
 
@@ -19,7 +22,7 @@ class Server(object):
         return conn
 
     def raw_connection(self):
-        """Get a raw connection to the server."""
+        """Get a raw connection to an IMAP server."""
         return imaplib.IMAP4_SSL(self.host_name)
 
 
@@ -30,6 +33,11 @@ class Connection(object):
         self.__connection = connection or server.raw_connection()
 
     def close(self):
+        """
+        Permanently remove all messages that have the \Deleted flag set
+        from the currently selected mailbox, and returns to the authenticated
+        state from the selected state
+        """
         return self.__connection.close()
 
     # TODO: Determine what this is fetching
@@ -61,6 +69,7 @@ class Connection(object):
             raise exc.AuthenticationError(e)
 
     def logout(self):
+        """Inform the server that the client is done with the connection."""
         self.__connection.logout()
 
     def select(self, mailbox_name):
@@ -93,11 +102,11 @@ class Mailbox(object):
         self.__connection = connection
         self.name = name
 
-    def fetch(self, message_id):
-        data = self.__connection.fetch(message_id)
+    def fetch(self, uid):
+        data = self.__connection.fetch(uid)
         s = data[0][1]
         message = email.message_from_string(s)
-        return Message(message_id, message)
+        return Message(uid, message)
 
     def __iter__(self):
         for message_id in self.__connection.search():
@@ -112,11 +121,14 @@ class Mailbox(object):
 
 class Message(object):
     """
-    :param s: a string
+    :param uid:
+        A unique identifier string.
+
+    :param message:
+        An email.message.Message object.
     """
-    def __init__(self, id, message):
-        # Convert s to an email.message.Message object
-        self.id = id
+    def __init__(self, uid, message):
+        self.uid = uid
         self._message = message
 
     @property

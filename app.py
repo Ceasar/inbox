@@ -25,19 +25,19 @@ def create_app(conn):
                     "name": mailbox_name,
                     "messages": [
                         url_for('show_message', mailbox_name=mailbox_name,
-                                id=message_id, _external=True)
-                        for message_id in mailbox
+                                uid=message_uid, _external=True)
+                        for message_uid in mailbox
                     ],
                 }
                 return jsonify(resp)
         except ValueError:
             abort(404)
 
-    @app.route('/<path:mailbox_name>/<int:id>')
-    def show_message(mailbox_name, id):
+    @app.route('/<path:mailbox_name>/<int:uid>')
+    def show_message(mailbox_name, uid):
         try:
             with conn.select(mailbox_name) as mailbox:
-                email = mailbox.fetch(int(id))
+                email = mailbox.fetch(int(uid))
                 return jsonify({'headers': email.headers, 'body': email.body})
         except ValueError:
             abort(404)
