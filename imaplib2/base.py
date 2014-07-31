@@ -96,6 +96,8 @@ class Connection(object):
 
     def __exit__(self, type, value, traceback):
         self.logout()
+        if type is not None:
+            raise type(value)
 
 
 class Mailbox(object):
@@ -120,7 +122,9 @@ class Mailbox(object):
         return self
 
     def __exit__(self, type, value, traceback):
-        return self.__connection.close()
+        self.__connection.close()
+        if type is not None:
+            raise type(value)
 
 
 class Message(object):
