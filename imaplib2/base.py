@@ -29,6 +29,9 @@ class Connection(object):
         self.server = server
         self.__connection = connection or server.raw_connection()
 
+    def close(self):
+        return self.__connection.close()
+
     def fetch(self, message_id):
         # fetch the email body (RFC822) for the given ID
         message_set, message_parts = message_id, "(RFC822)"
@@ -91,6 +94,12 @@ class Mailbox(object):
     def __iter__(self):
         for message_id in self.__connection.search():
             yield message_id
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        return self.__connection.close()
 
 
 class Message(object):
