@@ -32,7 +32,7 @@ class Connection(object):
     def fetch(self, message_id):
         # fetch the email body (RFC822) for the given ID
         message_set, message_parts = message_id, "(RFC822)"
-        _, data = self.__connection.fetch(message_set, message_parts)
+        _, data = self.__connection.uid('fetch', message_set, message_parts)
         # data is a list of tuples of message part envelope and data.
         return data
 
@@ -64,7 +64,7 @@ class Connection(object):
     def search(self):
         """Get a list of message IDs that fit the search criteria"""
         charset, criteria = None, ["ALL"]
-        _, data = self.__connection.search(charset, *criteria)
+        _, data = self.__connection.uid('search', charset, *criteria)
         return data[0].split()
 
     def __enter__(self):
