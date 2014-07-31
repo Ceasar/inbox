@@ -68,7 +68,7 @@ class Connection(object):
         return data[0].split()
 
     def __enter__(self):
-        return self.connect()
+        return self
 
     def __exit__(self, type, value, traceback):
         self.logout()

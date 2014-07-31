@@ -5,12 +5,8 @@ from imaplib2.exc import AuthenticationError
 from local_settings import USERNAME, PASSWORD
 
 
-def make_app(username, password):
+def make_app(conn):
     app = Flask(__name__)
-
-    app.logger.debug("connecting to inbox...")
-    conn = Server("imap.gmail.com").connect(username, password)
-    app.logger.debug("connected.")
 
     @app.route('/')
     def index():
@@ -55,5 +51,6 @@ def make_app(username, password):
     return app
 
 if __name__ == "__main__":
-    app = make_app(USERNAME, PASSWORD)
-    app.run(debug=True, port=8000)
+    with Server("imap.gmail.com").connect(USERNAME, PASSWORD) as conn:
+        app = make_app(conn)
+        app.run(debug=True, port=8000)
