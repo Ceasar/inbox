@@ -82,29 +82,25 @@ class Mailbox(object):
         self.__connection = connection
         self.name = name
 
-    @property
-    def messages(self):
-        return list(self)
+    def fetch(self, message_id):
+        data = self.__connection.fetch(message_id)
+        s = data[0][1]
+        message = email.message_from_string(s)
+        return Message(message_id, message)
 
     def __iter__(self):
         for message_id in self.__connection.search():
-            yield Message(self.__connection, message_id)
+            yield message_id
 
 
 class Message(object):
     """
     :param s: a string
     """
-    def __init__(self, connection, id):
+    def __init__(self, id, message):
         # Convert s to an email.message.Message object
-        self.__connection = connection
         self.id = id
-
-    @property
-    def _message(self):
-        data = self.__connection.fetch(self.id)
-        s = data[0][1]
-        return email.message_from_string(s)
+        self._message = message
 
     @property
     def headers(self):

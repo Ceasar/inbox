@@ -33,13 +33,12 @@ def make_app(username, password):
             abort(401)
         except ValueError:
             abort(404)
-        messages = mailbox.messages
         resp = {
             "name": mailbox_name,
             "messages": [
                 url_for('show_message', mailbox_name=mailbox_name,
-                        id=message.id, _external=True)
-                for message in messages
+                        id=message_id, _external=True)
+                for message_id in mailbox
             ],
         }
         return jsonify(resp)
@@ -50,7 +49,7 @@ def make_app(username, password):
             mailbox = conn.select(mailbox_name)
         except AuthenticationError:
             abort(401)
-        email = mailbox.messages[-int(id)]
+        email = mailbox.fetch(int(id))
         return jsonify({'headers': email.headers, 'body': email.body})
 
     return app
