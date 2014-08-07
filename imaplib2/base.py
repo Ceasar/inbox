@@ -150,3 +150,7 @@ class Message(object):
              'Content-Type': part.get_content_type()}
             for part in self._message.walk()
             if not part.is_multipart()]
+
+    @property
+    def raw(self):
+        return self._message.as_string()

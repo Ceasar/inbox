@@ -42,6 +42,15 @@ def create_app(conn):
         except ValueError:
             abort(404)
 
+    @app.route('/<path:mailbox_name>/<int:uid>/raw')
+    def show_raw_message(mailbox_name, uid):
+        try:
+            with conn.select(mailbox_name) as mailbox:
+                email = mailbox.fetch(int(uid))
+                return jsonify({'raw': email.raw})
+        except ValueError:
+            abort(404)
+
     return app
 
 if __name__ == "__main__":
